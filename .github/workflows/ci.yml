@@ -1,0 +1,49 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        # Keep this digest identical to the db service in compose.yaml.
+        image: postgres:18.6-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+        env:
+          POSTGRES_USER: triagekit_test
+          POSTGRES_PASSWORD: test-password
+          POSTGRES_DB: triagekit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U triagekit_test -d triagekit_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      TEST_DATABASE_URL: postgres://triagekit_test:test-password@127.0.0.1:5432/triagekit_test
+      # Disposable CI values for the Compose stack; never reused elsewhere.
+      API_KEYS: ci-only-service-key-at-least-32-characters
+      POSTGRES_PASSWORD: ci-only-local-database-password
+      LLM_PROVIDER: fake
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun audit
+      - run: bun run check
+      - name: Start the complete offline stack
+        run: docker compose up --build --wait --wait-timeout 120
+      - name: Check ingestion, duplicate seeding, and asynchronous classification
+        run: bun run smoke
+      - name: Stop the disposable stack
+        if: always()
+        run: docker compose down --volumes

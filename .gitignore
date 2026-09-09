@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+coverage/
+tmp/
+*.log
+.DS_Store
+.codebase-memory/
+output/
+# Generated evaluation archives can contain ticket content and model output.
+eval/*results.json
+# Database backups are local operator artifacts.
+*.dump

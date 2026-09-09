@@ -1,0 +1,23 @@
+# Requires Docker Compose 2.24.4+. Use an external PostgreSQL instance and TLS proxy.
+# POSTGRES_PASSWORD stays required: compose.yaml interpolates it before the db profile is skipped.
+x-production-environment: &production-environment
+  NODE_ENV: production
+  LLM_PROVIDER: openrouter
+  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL for the runtime database role}
+
+services:
+  db:
+    profiles: ["development-database"]
+  migrate:
+    depends_on: !reset {}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL for the migration owner}
+  api:
+    environment:
+      <<: *production-environment
+  worker:
+    environment:
+      <<: *production-environment
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:?Set OPENROUTER_MODEL}

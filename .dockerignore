@@ -1,0 +1,12 @@
+*
+!package.json
+!bun.lock
+!LICENSE
+!src/
+!src/**
+!migrations/
+!migrations/**
+!scripts/
+!scripts/**
+!samples/
+!samples/**

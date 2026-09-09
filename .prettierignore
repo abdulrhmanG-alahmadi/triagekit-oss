@@ -1,0 +1,4 @@
+bun.lock
+tmp/
+.codebase-memory/
+output/

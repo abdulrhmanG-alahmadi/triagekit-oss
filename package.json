@@ -1,0 +1,51 @@
+{
+  "name": "triagekit",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.0",
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "worker": "bun src/worker.ts",
+    "migrate": "bun src/migrate.ts",
+    "seed": "bun scripts/seed.ts",
+    "smoke": "bun scripts/smoke.ts",
+    "monitor": "bun scripts/check-operations.ts",
+    "eval": "bun scripts/eval.ts",
+    "format": "biome format --write . && prettier --write '**/*.{md,yml,yaml}'",
+    "format:check": "biome format . && prettier --check '**/*.{md,yml,yaml}'",
+    "lint": "biome lint .",
+    "test": "bun test tests --timeout 30000",
+    "test:integration": "bun test integration --timeout 30000",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run test:integration",
+    "eval:report": "bun eval/report.mjs"
+  },
+  "dependencies": {
+    "@elysiajs/eden": "1.4.9",
+    "@elysiajs/openapi": "1.4.16",
+    "@elysiajs/server-timing": "1.4.1",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.222.0",
+    "@opentelemetry/resources": "2.11.0",
+    "@opentelemetry/sdk-trace": "2.11.0",
+    "@sinclair/typebox": "0.34.52",
+    "elysia": "1.4.30"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/bun": "1.4.1",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2"
+  },
+  "description": "Durable, asynchronous support-ticket classification with a validated LLM boundary.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdulrhmanG-alahmadi/triagekit-oss.git"
+  }
+}
