@@ -27,13 +27,13 @@ GRANT SELECT ON public.schema_migrations TO triagekit_runtime;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO triagekit_runtime;
 ```
 
-Set `DATABASE_URL` to the runtime role and `MIGRATION_DATABASE_URL` to the migration owner against the same database, using TLS with server certificate verification. The local Compose database account is a development bootstrap superuser and must not be used by production application processes. Runtime access deliberately excludes DELETE and DDL.
+Set `DATABASE_URL` to the runtime role and `MIGRATION_DATABASE_URL` to the migration owner against the same database. With `NODE_ENV=production`, API, worker, migrations and retention default to `DATABASE_TLS=verify-full`, checking the server certificate and hostname even if the URL requests weaker TLS. `DATABASE_TLS=private-network` explicitly disables database TLS; use it only on an isolated trusted network when the provider's private endpoint does not support verified TLS. It does not encrypt traffic. Other values fail startup. Development leaves URL TLS settings intact. The local Compose database account is a development bootstrap superuser and must not be used by production application processes. Runtime access deliberately excludes DELETE and DDL.
 
 ## Deployment and migrations
 
 Supply `API_KEYS` only to the API, and `OPENROUTER_API_KEY` plus an explicit `OPENROUTER_MODEL` only to the worker through the deployment secret store. The migrator needs only its database URL. Compose enforces these process scopes. A shared host `.env` is for development; use separate process environments in production. URL-encode credentials embedded in connection URLs and keep secrets out of images.
 
-The override requires Docker Compose 2.24.4 or newer for `!reset`. Production mode disables the local database by default, forces OpenRouter and fails closed when required secrets are missing. Keep `POSTGRES_PASSWORD` set: the base Compose file interpolates it before skipping the local database.
+The override requires Docker Compose 2.24.4 or newer for `!reset`. Production mode disables the local database by default, forces OpenRouter and fails closed when required secrets are missing or published `dev-only-`/`ci-only-` API credentials are used. Keep `POSTGRES_PASSWORD` set: the base Compose file interpolates it before skipping the local database.
 
 **Migration 002 requires a drain:** it backfills tickets and adds the current-run foreign key. Older binaries cannot create the required run records. Stop and drain existing API/worker instances before migration, apply runtime grants after new tables exist, then start the new image:
 
@@ -70,7 +70,7 @@ Compare ticket and classification-run counts before admitting traffic. Keep the 
 
 ## Network and credentials
 
-A TLS reverse proxy must forward to the loopback API port, enforce the 128 KiB body limit and rate-limit unauthenticated traffic. Do not expose PostgreSQL or plain HTTP directly to the internet. Keep production OpenAPI endpoints authenticated. Application containers run as the unprivileged Bun user with read-only filesystems, writable temporary memory, no Linux capabilities and privilege escalation disabled.
+A TLS reverse proxy must forward to the loopback API port, enforce the 128 KiB body limit and rate-limit unauthenticated traffic. Do not expose PostgreSQL or plain HTTP directly to the internet. Keep production OpenAPI endpoints authenticated. Compose application containers run as the unprivileged Bun user with read-only filesystems, writable temporary memory, no Linux capabilities and privilege escalation disabled. The Dockerfile sets the unprivileged user; other hosting platforms need their own isolation settings.
 
 Rotate API credentials by deploying `API_KEYS=old,new`, switching clients, then deploying only the new key. Each key authorizes the same organization and has its own rate limit. This is service authentication: user identity, role-based authorization and tenant isolation are absent. Add tenant-scoped storage and authorization before serving separate organizations. The fixed-window limiter permits boundary bursts; apply a stricter edge policy if needed.
 
@@ -96,4 +96,18 @@ For production, use managed backups, encrypt and restrict dumps, and agree reten
 pg_restore --no-owner --no-acl --username=triagekit_migrator --dbname='<restore-database>' triagekit.dump
 ```
 
-Restoring as the migration owner preserves ownership for future migrations. Since `--no-acl` omits grants, reapply database/schema access and runtime grants above, substituting the restore database name, before reconnecting application processes. Check ticket counts and a full create/classify/read lifecycle. A written runbook is not a performed restore or a measured recovery objective.
+Restoring as the migration owner preserves ownership for future migrations. Since `--no-acl` omits grants, reapply database/schema access and runtime grants above, substituting the restore database name, before reconnecting application processes. Check ticket counts and a full create/classify/read lifecycle. `bun run verify:production` performs an isolated local dump/restore and compares complete ticket/run history; repeat recovery on the actual host to measure its recovery objectives.
+
+## Retention and erasure
+
+Choose the retention period with the support organization. `bun run retention` processes one batch of terminal tickets whose `updated_at` is strictly before an explicit UTC cutoff. Pending work is excluded. It defaults to a dry run, prints the selected IDs and history count, and requires `--apply` to delete ticket content and all classification history atomically:
+
+```sh
+# Inject MAINTENANCE_DATABASE_URL through the operator's secret environment.
+NODE_ENV=production bun run retention --before 2026-01-01T00:00:00Z --batch-size 100
+# Review the cutoff and affected IDs before repeating with --apply.
+```
+
+Use `--id TICKET_ID` to select one eligible ticket. Each invocation handles at most 1,000 unlocked tickets; repeat for further batches. A preview is not a reservation: concurrent work can change the next batch. The command requires `MAINTENANCE_DATABASE_URL` and never falls back to the runtime URL. Use the migration owner or a separate maintenance identity with `SELECT, UPDATE, DELETE` on `tickets` and `SELECT, DELETE` on `classification_runs`, plus database/schema access. Never give these privileges to API/worker.
+
+Deletion also removes deduplication and run IDs; replaying an erased ID can create new work. Restricted backups can still contain erased data until their own retention expires. Record erasure requests outside ticket storage and reapply them after a restore before admitting traffic. Avoid logging retention output where ticket identifiers should not be retained.

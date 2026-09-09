@@ -16,6 +16,8 @@
     "seed": "bun scripts/seed.ts",
     "smoke": "bun scripts/smoke.ts",
     "monitor": "bun scripts/check-operations.ts",
+    "retention": "bun src/retention.ts",
+    "verify:production": "bun scripts/verify-production.ts",
     "eval": "bun scripts/eval.ts",
     "format": "biome format --write . && prettier --write '**/*.{md,yml,yaml}'",
     "format:check": "biome format . && prettier --check '**/*.{md,yml,yaml}'",

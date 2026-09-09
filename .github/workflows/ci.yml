@@ -40,6 +40,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun audit
       - run: bun run check
+      - name: Rehearse provider outage, worker restart, alerts and backup restore
+        run: bun run verify:production
       - name: Start the complete offline stack
         run: docker compose up --build --wait --wait-timeout 120
       - name: Check ingestion, duplicate seeding, and asynchronous classification

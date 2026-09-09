@@ -8,7 +8,7 @@ import { createTelemetry } from "./telemetry";
 const config = readConfig(process.env, "api");
 const log = createLogger("triagekit-api");
 const telemetry = createTelemetry("triagekit-api", config.telemetryEndpoint);
-const sql = connectDatabase(config.databaseUrl);
+const sql = connectDatabase(config.databaseUrl, 10, config.databaseSsl);
 const app = createApp(config, new Store(sql), log, telemetry.tracer).listen({
   hostname: config.host,
   port: config.port,

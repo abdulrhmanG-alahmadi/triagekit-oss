@@ -98,7 +98,7 @@ bun install --frozen-lockfile
 TEST_DATABASE_URL='postgres://user:password@127.0.0.1:5432/triagekit_test' bun run check
 ```
 
-`check` runs formatting, lint, types, unit tests and real-PostgreSQL integration tests, covering duplicate ingestion, fencing, retry exhaustion, reclassification, API bounds and shutdown/restart behavior. Tests use local provider stubs. CI also runs dependency audit and Compose smoke. See [verification](docs/verification.md).
+`check` runs formatting, lint, types, unit tests and real-PostgreSQL integration tests, covering duplicate ingestion, fencing, retry exhaustion, reclassification, API bounds and shutdown/restart behavior. Tests use local provider stubs. CI also runs dependency audit, Compose smoke and `bun run verify:production`: a disposable load, outage, restart and full backup/restore rehearsal. See [verification](docs/verification.md).
 
 The regression suite has 19 synthetic cases; a separate heldout fixture has 12. Fixtures and labels are agent-authored and not human-validated. Host evaluation requires Node 22.22+ alongside Bun; pinned Promptfoo downloads on first use.
 
@@ -116,9 +116,9 @@ Use a disposable deployment: evaluations create tickets. Each case runs three ti
 
 For production, use managed PostgreSQL with automated backups and point-in-time recovery.
 
-[Operations](docs/operations.md) covers production Compose, separate runtime/migration roles, TLS, credential rotation, monitoring, backups and rollback. The tooling does not establish production readiness by itself.
+[Operations](docs/operations.md) covers production Compose, separate runtime/migration roles, verified database TLS, credential rotation, retention, monitoring, backups and rollback. The [Render deployment recipe](docs/render.md) provides a managed hosting starting point. The tooling does not establish destination readiness by itself.
 
-Priorities before broader use are human-reviewed representative evaluations, deployment-specific restore/load testing and alerting, then tenant isolation and finer authorization if serving multiple organizations. Add retention policy before accumulating real customer data. Measure queue contention before introducing a separate broker.
+Before admitting customer traffic, validate representative tickets with support staff, perform the destination restore/load and alert-delivery checks, and choose a retention period. The operator-only `bun run retention` command previews deletions by default and requires `--apply`. Add tenant isolation and finer authorization before serving multiple organizations. Measure queue contention before introducing a separate broker.
 
 ## Weaknesses
 
@@ -126,7 +126,7 @@ Priorities before broader use are human-reviewed representative evaluations, dep
 - Prompt injection is mitigated by prompt structure and output validation, not prevented; schema-valid semantic mistakes still pass.
 - The one-sentence summary check is a Unicode heuristic, so unusual punctuation can be rejected or accepted wrongly.
 - Evaluations are synthetic and agent-orchestrated; no support staff has validated labels against real tickets.
-- Pagination is not a snapshot, and there is no tenant isolation or retention policy.
+- Pagination is not a snapshot, and there is no tenant isolation. Operators must choose and schedule their retention policy.
 
 ## Contributing
 

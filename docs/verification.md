@@ -25,6 +25,7 @@ Coverage includes:
 - Exclusive claims, bounded retries, expired-lease recovery and stale-result rejection, including row-lock waits.
 - Real worker SIGTERM draining and competing-process recovery after SIGKILL; API shutdown has narrower in-process coverage.
 - Idempotent reclassification/history, migration upgrades and restricted database permissions.
+- Retention dry runs, bounded concurrent deletion, complete-history deletion and atomic rollback; production TLS rejects plaintext endpoints.
 - Evaluation completeness, model identity, fixture fingerprints and failure accounting; fake results cannot establish live-model quality.
 
 With the offline Compose stack running, exercise the API and worker together:
@@ -35,6 +36,14 @@ docker compose exec api bun run smoke
 
 Smoke loads all ten synthetic example tickets, verifies duplicate seeding creates no work, waits for terminal classifications, checks retained input, and exercises reclassification replay and history. CI runs the checks, dependency audit, Compose startup and smoke.
 
+Run the operational rehearsal from a development checkout with Docker available:
+
+```sh
+bun run verify:production
+```
+
+It creates and removes its own PostgreSQL container; it never accepts an existing database URL. It submits 200 synthetic tickets twice at HTTP concurrency 16, checks duplicate ingestion, detects stalled work, injects provider 503s, restarts the real worker with SIGTERM, verifies recovery and terminal-failure alerts, creates five historical runs, and dump/restores all ticket/run/migration/rate-limit records into a second database. Any mismatch exits nonzero. CI runs this rehearsal too. JSON output reports timings and counts for that machine; the 25 ms local provider stub does not measure live-model or cloud capacity. Existing integration tests separately exercise SIGKILL lease recovery. Alert status is verified, not notification delivery.
+
 After a live evaluation, rescore its generated archive without further model calls:
 
 ```sh
@@ -43,4 +52,4 @@ bun run eval:report eval/results.json
 
 No live-model result archive is bundled. Unit tests exercise reporting with explicitly synthetic offline responses. Live evaluation uses fresh tickets and costs provider tokens; see the README.
 
-Tests do not establish universal prompt-injection resistance, representative support accuracy, destination readiness or recovery objectives. Load testing, backup restoration, TLS, alert delivery and real-workload capacity require separate operational verification; see [operations](operations.md).
+Tests do not establish universal prompt-injection resistance, representative support accuracy, destination readiness or recovery objectives. Repeat load/restore checks on the destination, verify its TLS and actual alert delivery, and measure real-workload capacity; see [operations](operations.md).

@@ -216,7 +216,11 @@ if (import.meta.main) {
     "triagekit-worker",
     config.telemetryEndpoint,
   );
-  const sql = connectDatabase(config.databaseUrl, config.concurrency + 2);
+  const sql = connectDatabase(
+    config.databaseUrl,
+    config.concurrency + 2,
+    config.databaseSsl,
+  );
   const store = new Store(sql);
   const classify = createClassifier({
     mode: config.provider,

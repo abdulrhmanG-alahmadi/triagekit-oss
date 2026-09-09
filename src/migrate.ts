@@ -1,4 +1,5 @@
 import { SQL } from "bun";
+import { databaseSslMode } from "./database";
 import { readdir } from "node:fs/promises";
 import { createLogger } from "./log";
 
@@ -25,7 +26,11 @@ if (import.meta.main) {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   let sql: SQL | undefined;
   try {
-    sql = new SQL(process.env.DATABASE_URL, { max: 1, connectionTimeout: 5 });
+    sql = new SQL(process.env.DATABASE_URL, {
+      max: 1,
+      connectionTimeout: 5,
+      ssl: databaseSslMode(process.env),
+    });
     await migrate(sql);
     log({ event: "migrations_complete" });
   } catch (error) {

@@ -6,6 +6,27 @@ const env = {
   API_KEYS: "a".repeat(32),
 };
 
+test("production rejects published example credentials and defaults to verified database TLS", () => {
+  const production = { ...env, NODE_ENV: "production" };
+  expect(readConfig(production, "api").databaseSsl).toBe("verify-full");
+  for (const key of [
+    "dev-only-triagekit-api-key-0000000000000000",
+    "ci-only-service-key-at-least-32-characters",
+  ])
+    expect(() => readConfig({ ...production, API_KEYS: key }, "api")).toThrow(
+      "development credentials",
+    );
+  expect(readConfig(env, "api").databaseSsl).toBeUndefined();
+  expect(
+    readConfig({ ...production, DATABASE_TLS: "private-network" }, "api")
+      .databaseSsl,
+  ).toBe("disable");
+  for (const value of ["disable", "require", "prefer", "false", ""])
+    expect(() => readConfig({ ...env, DATABASE_TLS: value }, "api")).toThrow(
+      "DATABASE_TLS",
+    );
+});
+
 test("configuration fails closed and bounds worker resources", () => {
   expect(() => readConfig({})).toThrow();
   expect(() => readConfig({ ...env, API_KEYS: "short" })).toThrow();

@@ -1,3 +1,5 @@
+import { databaseSslMode } from "./database";
+
 export const apiKeyPattern = /^(?=.{32,256}$)[A-Za-z0-9._~+/-]+=*$/;
 
 export function readConfig(
@@ -38,6 +40,8 @@ export function readConfig(
       "API_KEYS must contain RFC 6750 bearer tokens of 32–256 ASCII characters",
     );
   const production = env.NODE_ENV === "production";
+  if (production && apiKeys.some((key) => /^(dev-only-|ci-only-)/.test(key)))
+    throw new Error("Production cannot use published development credentials");
   const telemetryEndpoint = env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || undefined;
   if (telemetryEndpoint) {
     try {
@@ -75,6 +79,7 @@ export function readConfig(
     throw new Error("LEASE_MS must exceed MODEL_TIMEOUT_MS by at least 10000");
   return {
     databaseUrl,
+    databaseSsl: databaseSslMode(env),
     apiKeys,
     production,
     telemetryEndpoint,
