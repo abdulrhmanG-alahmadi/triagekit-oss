@@ -12,3 +12,5 @@ TEST_DATABASE_URL='postgres://triagekit_test:t@127.0.0.1:5432/triagekit_test' bu
 Integration tests erase their test data. Use a database ending in `_test`, never a database you need to keep. The normal test suite makes no paid model calls.
 
 Pull requests should explain the problem, the change and the checks performed. Add a regression test for behavior changes, update affected documentation, and preserve migration compatibility. Do not commit `.env`, database dumps, customer tickets or generated evaluation results. Synthetic examples must be original or carry a compatible license.
+
+Dependabot checks Docker images and GitHub Actions. Bun package updates are manual until Dependabot supports `bun.lock` version 2; update the manifest and lockfile together and run the checks above. CI runs `bun audit` on every change.

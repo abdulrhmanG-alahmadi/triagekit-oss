@@ -4,10 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-  - package-ecosystem: bun
-    directory: /
-    schedule:
-      interval: weekly
+  # ponytail: Bun updates are manual until Dependabot supports bun.lock v2.
+  # CI still runs bun audit for dependency advisories.
   - package-ecosystem: docker
     directory: /
     schedule:
