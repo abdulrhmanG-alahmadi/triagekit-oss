@@ -4,6 +4,10 @@ TriageKit classifies support tickets asynchronously with Bun, Elysia and Postgre
 
 Built for one support organization and trusted service clients, it provides idempotent ingestion, durable retries, reclassification history and graceful worker shutdown. PostgreSQL stores both tickets and pending work. See the [design](docs/design.md) for the implementation and its trade-offs.
 
+TriageKit started as an interview take-home that called for a small, clear solution. I kept developing the reliability and operational features beyond that scope, then released this standalone version as an open-source project under the MIT license.
+
+The repository includes tested recovery, backup/restore and retention tooling. It is not a hosted service; production use still requires verification in your deployment environment.
+
 ## Start offline
 
 Existing PostgreSQL 17 volumes need the [upgrade procedure](docs/operations.md#postgresql-17-to-18) before starting this version.
