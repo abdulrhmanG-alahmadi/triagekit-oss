@@ -1,4 +1,8 @@
-![TriageKit — reliable LLM workflows](docs/cover.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/cover.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/cover-light.svg">
+  <img alt="TriageKit — Reliable LLM workflows" src="docs/cover.svg" width="1200">
+</picture>
 
 # TriageKit
 
@@ -13,6 +17,12 @@
 **Approach.** Persist the ticket and its pending work in PostgreSQL, then let a separate worker perform inference. Validate the model response before publication and use leases, bounded retries, and attempt IDs to handle failures.
 
 **Current result.** The repository includes an offline fake-provider demo, real-PostgreSQL integration tests, reclassification history, and recovery tooling. It is a standalone service for one support organization; it does not claim a live-model accuracy benchmark or a hosted production deployment.
+
+## Recorded offline preview
+
+![Recorded API response for a synthetic invoice question](docs/profile-demo.svg)
+
+Visual replay of an actual local run using `fake-v1`, not a live-model benchmark. Animation timing is illustrative. [Captured request and response](docs/profile-demo.json) · [Reproduce the demo](#start-offline).
 
 ## Architecture
 
