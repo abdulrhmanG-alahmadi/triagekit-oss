@@ -1,4 +1,33 @@
+![TriageKit — reliable LLM workflows](docs/cover.svg)
+
 # TriageKit
+
+**Durable support-ticket classification with a validated LLM boundary.**
+
+[Run the offline demo](#start-offline) · [Architecture](#architecture) · [Design decisions](docs/design.md) · [Operations](docs/operations.md)
+
+## Project story
+
+**Problem.** Classifying a ticket should not tie the API response to a slow or unavailable model provider, and accepted work should survive a restart.
+
+**Approach.** Persist the ticket and its pending work in PostgreSQL, then let a separate worker perform inference. Validate the model response before publication and use leases, bounded retries, and attempt IDs to handle failures.
+
+**Current result.** The repository includes an offline fake-provider demo, real-PostgreSQL integration tests, reclassification history, and recovery tooling. It is a standalone service for one support organization; it does not claim a live-model accuracy benchmark or a hosted production deployment.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    C[Service client] --> A[Bun / Elysia API]
+    A --> D[(PostgreSQL tickets and pending work)]
+    D --> W[Worker claims a leased job]
+    W --> P[Fake provider or OpenRouter]
+    P --> V[Strict output validation]
+    V --> D
+    A --> R[Ticket status and run history]
+```
+
+## Overview
 
 TriageKit classifies support tickets asynchronously with Bun, Elysia and PostgreSQL. The API durably accepts tickets; a separate worker calls OpenRouter and validates its output. Offline startup uses a deterministic fake without credentials or model charges.
 
