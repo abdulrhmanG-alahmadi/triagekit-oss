@@ -7,10 +7,7 @@
     "body": "Where can I download my July invoice?"
   },
   "postStatus": 201,
-  "observedStatuses": [
-    "pending",
-    "classified"
-  ],
+  "observedStatuses": ["pending", "classified"],
   "response": {
     "id": "profile-preview-20260925-b",
     "subject": "Invoice question",
